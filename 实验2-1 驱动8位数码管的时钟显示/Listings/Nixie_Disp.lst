@@ -1,0 +1,93 @@
+C51 COMPILER V9.54   NIXIE_DISP                                                            06/18/2025 17:18:36 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE NIXIE_DISP
+OBJECT MODULE PLACED IN .\Objects\Nixie_Disp.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE Nixie_Disp.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listing
+                    -s\Nixie_Disp.lst) TABS(2) OBJECT(.\Objects\Nixie_Disp.obj)
+
+line level    source
+
+   1          #include <REGX52.H>
+   2          
+   3          unsigned int refresh = 5;
+   4          // digit display ( 0~9 )
+   5          unsigned char digit[] = {0xC0, 0xF9, 0xA4, 0xB0, 0x99,
+   6                                   0x92, 0x82, 0xF8, 0x80, 0x90}; 
+   7          
+   8          unsigned char tube_label[] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
+   9                                   
+  10          void delay(unsigned int time)
+  11          {
+  12   1        unsigned i,j;
+  13   1        for(i=0; i<time; i++)
+  14   1        {
+  15   2          for(j=0; j<=120; j++);
+  16   2        }
+  17   1      }
+  18          
+  19          void Bit_Latch()
+  20          {
+  21   1        P2 = (P2 & 0x1F)|0xC0;
+  22   1        P2 &= 0x1F;
+  23   1      }
+  24          
+  25          
+  26          void Seg_Latch()
+  27          {
+  28   1        P2 = (P2 & 0x1F)|0xE0;    
+  29   1        P2 &= 0x1F;               
+  30   1      }
+  31          
+  32          int Power(int X, int Y)
+  33          {
+  34   1        int i, result=1;
+  35   1        for(i=0; i<Y; i++)
+  36   1        {
+  37   2          result *= X;
+  38   2        }
+  39   1        return result;
+  40   1      }
+  41          
+  42          
+  43          void ShowNum(unsigned int column, unsigned int number, unsigned int length)
+  44          {
+  45   1        unsigned int i, loc = column-1;
+  46   1        for(i=length; i>0; i--)
+  47   1        {
+  48   2          P0 = tube_label[loc];
+  49   2          Bit_Latch();
+  50   2          P0 = digit[(number/Power(10, i-1))%10];
+  51   2          Seg_Latch();
+  52   2          loc++;
+  53   2          delay(refresh);
+  54   2        }
+C51 COMPILER V9.54   NIXIE_DISP                                                            06/18/2025 17:18:36 PAGE 2   
+
+  55   1      }
+  56          
+  57          void ShowChar(unsigned int column, unsigned char Char)
+  58          {
+  59   1        if(Char=='-')
+  60   1        {
+  61   2          P0 = tube_label[column-1];
+  62   2          Bit_Latch();
+  63   2          P0 = 0xBF;
+  64   2          Seg_Latch();
+  65   2          delay(refresh);
+  66   2        }
+  67   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    241    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     20      10
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

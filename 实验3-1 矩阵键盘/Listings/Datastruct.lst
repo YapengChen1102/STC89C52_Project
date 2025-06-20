@@ -1,0 +1,74 @@
+C51 COMPILER V9.54   DATASTRUCT                                                            06/19/2025 11:46:25 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE DATASTRUCT
+OBJECT MODULE PLACED IN .\Objects\Datastruct.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE Datastruct.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listing
+                    -s\Datastruct.lst) TABS(2) OBJECT(.\Objects\Datastruct.obj)
+
+line level    source
+
+   1          #define NULL 0x00;
+   2          
+   3          typedef struct ring
+   4          {
+   5            unsigned int Data;
+   6            struct ring *Next;
+   7          }RING;
+   8          
+   9          RING Node1;
+  10          RING Node2;
+  11          RING Node3;
+  12          RING Node4;
+  13          RING Node5;
+  14          RING Node6;
+  15          RING Node7;
+  16          RING Node8;
+  17          
+  18          RING *ring_init(void)
+  19          {
+  20   1        RING *head;
+  21   1        Node1.Data = 0xC0;
+  22   1        Node2.Data = 0xF9;
+  23   1        Node3.Data = 0xA4;
+  24   1        Node4.Data = 0xB0;
+  25   1        Node5.Data = 0x99;
+  26   1        Node6.Data = 0x92;
+  27   1        Node7.Data = 0x82;
+  28   1        Node8.Data = 0xF8;
+  29   1        
+  30   1        Node1.Next = &Node2;
+  31   1        Node2.Next = &Node3;
+  32   1        Node3.Next = &Node4;
+  33   1        Node4.Next = &Node5;
+  34   1        Node5.Next = &Node6;
+  35   1        Node6.Next = &Node7;
+  36   1        Node7.Next = &Node8;
+  37   1        Node8.Next = &Node1;
+  38   1        
+  39   1        head = &Node1;
+  40   1        return head;
+  41   1      }
+  42          
+  43          RING *write(RING *head, unsigned int written_Data)
+  44          {
+  45   1        RING *pr = head;
+  46   1        pr->Data = written_Data;
+  47   1        return pr->Next;
+  48   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    140    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+C51 COMPILER V9.54   DATASTRUCT                                                            06/19/2025 11:46:25 PAGE 2   
+
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     40    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

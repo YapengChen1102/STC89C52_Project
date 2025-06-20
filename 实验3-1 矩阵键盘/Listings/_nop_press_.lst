@@ -1,0 +1,282 @@
+C51 COMPILER V9.54   _NOP_PRESS_                                                           06/20/2025 18:09:57 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE _NOP_PRESS_
+OBJECT MODULE PLACED IN .\Objects\_nop_press_.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE _nop_press_.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listin
+                    -gs\_nop_press_.lst) TABS(2) OBJECT(.\Objects\_nop_press_.obj)
+
+line level    source
+
+   1          /**
+   2            * 特殊功能寄存器、I/O口地址
+   3            * CT107D实验板的矩阵按键需要P4.2（0xC2）和P4.4 （0xC4）
+   4            * 本项目是为了实现模拟电话按键
+   5            **/
+   6          
+   7          sfr    P0 = 0x80;
+   8          sfr    P2 = 0xA0;
+   9          sfr    P3 = 0xB0;
+  10          sfr    P4 = 0xC0;
+  11          
+  12          sbit P3_0 = 0xB0;
+  13          sbit P3_1 = 0xB1;
+  14          sbit P3_2 = 0xB2;
+  15          sbit P3_3 = 0xB3;
+  16          sbit P3_4 = 0xB4;
+  17          sbit P3_5 = 0xB5;
+  18          sbit P3_6 = 0xB6;
+  19          sbit P3_7 = 0xB7;
+  20          
+  21          sbit P4_2 = 0xC2;
+  22          sbit P4_4 = 0xC4;
+  23          
+  24          /**
+  25            * EnableWrite 控制链表是否写入
+  26            * row 全局变量 获取按下key的行坐标 
+  27            * row 全局变量 获取按下key的列坐标
+  28            * keyboard 使用二维数组 模拟键盘按键 
+  29            * tube_label 控制八位数码管的选通
+  30            * NULL 空指针 指向0x00
+  31            */
+  32          
+  33          unsigned int EnableWrite = 0;
+  34          unsigned int row = 114;
+  35          unsigned int column = 514;
+  36          unsigned int keyboard[4][4] = {
+  37                        0xF9, 0xA4, 0xB0, 0xFF,
+  38                        0x99, 0x92, 0x82, 0xFF,
+  39                        0xF8, 0x80, 0x90, 0xFF,
+  40                        0xC0, 0xC0, 0xFF, 0xFF
+  41                                        };
+  42          
+  43          int tube_label[] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
+  44          
+  45          #define NULL 0x00;
+  46          
+  47          /**
+  48            * 定义循环链表(环)
+  49            * 测试输入：0000 0000
+  50            * 按键操作：1
+  51            * 结果显示：0000 0001
+  52            */
+  53          
+  54          typedef struct ring
+C51 COMPILER V9.54   _NOP_PRESS_                                                           06/20/2025 18:09:57 PAGE 2   
+
+  55          {
+  56            unsigned int Data;
+  57            struct ring *Next;
+  58          }RING;
+  59          
+  60          Ring Node1;
+*** ERROR C129 IN LINE 60 OF _nop_press_.c: missing ';' before 'Node1'
+  61          Ring Node2;
+  62          Ring Node3;
+  63          Ring Node4;
+  64          Ring Node5;
+  65          Ring Node6;
+  66          Ring Node7;
+  67          Ring Node8;
+  68          
+  69          Ring *Ring_init(void)
+  70          {
+  71            Ring *head;
+  72            Node1.Data = 0xFF;
+  73            Node2.Data = 0xFF;
+  74            Node3.Data = 0xFF;
+  75            Node4.Data = 0xFF;
+  76            Node5.Data = 0xFF;
+  77            Node6.Data = 0xFF;
+  78            Node7.Data = 0xFF;
+  79            Node8.Data = 0xFF;
+  80            
+  81            Node1.Next = &Node2;
+  82            Node2.Next = &Node3;
+  83            Node3.Next = &Node4;
+  84            Node4.Next = &Node5;
+  85            Node5.Next = &Node6;
+  86            Node6.Next = &Node7;
+  87            Node7.Next = &Node8;
+  88            Node8.Next = &Node1;
+  89            
+  90            head = &Node1;
+  91            return head;
+  92          }
+  93          
+  94          /**
+  95            * 延时函数 为实现按键消抖，数码管消影
+  96            */
+  97          void delay(unsigned int ms)
+  98          {
+  99            unsigned i,j;
+ 100            for(i=0; i<ms; i++)
+ 101            {
+ 102              for(j=0; j<120; j++);
+ 103            }
+ 104          }
+ 105          
+ 106          /**
+ 107            * 给链表写入数据
+ 108            * 返回的头指针是原先链表首节点的指针域
+ 109            * demo： 
+ 110            *           |-----------------------------|
+ 111            *           v                             |
+ 112            * 创建节点 Node 1 -> Node -> Node 3 -> Node4.
+ 113            *           ^
+ 114            *           |
+ 115            *          head
+C51 COMPILER V9.54   _NOP_PRESS_                                                           06/20/2025 18:09:57 PAGE 3   
+
+ 116            *
+ 117            *           |-----------------------------|
+ 118            *           v                             |
+ 119            * 调用函数 Node 1 -> Node 2 -> Node 3 -> Node4.
+ 120            *                    ^
+ 121            *                    |
+ 122            *                   head
+ 123            */
+ 124          
+ 125          Ring *write(Ring *head, unsigned int written_Data)
+ 126          {
+ 127            Ring *pr = head;
+ 128            pr->Data = written_Data;
+ 129            return pr->Next;
+ 130          }
+ 131          
+ 132          /**
+ 133            * 在八位数码管上显示
+ 134            * 输入是循环链表（环）的头指针 
+ 135            */
+ 136          
+ 137          void display(Ring *head)
+ 138          {
+ 139            int loc;
+ 140            Ring *pr = head;
+ 141              for(loc=0; loc<=7; loc++)
+ 142              {
+ 143                P0 = tube_label[loc];
+ 144                P2 = (P2 & 0x1F) | 0xC0;
+ 145                P2 &= 0x1F;
+ 146                
+ 147                P0 = pr->Data;
+ 148                P2 = (P2 & 0x1F) | 0xE0;
+ 149                P2 &= 0x1F;
+ 150                pr = pr->Next;
+ 151                delay(10);
+ 152              }
+ 153          }
+ 154          
+ 155          /**
+ 156            * 按键检测模块 结果更新row, column
+ 157            * goto 真好用
+ 158            */
+ 159          
+ 160          void get_key(void)
+ 161          {
+ 162          
+ 163            P3 = (P3 & 0xC0) | 0x0F;
+ 164            P4 = (P4 & 0xEB) | 0x00;
+ 165            delay(0);
+ 166            if( P3_0 == 0 ) { row = 0; goto SEG1;}
+ 167            if( P3_1 == 0 ) { row = 1; goto SEG1;}
+ 168            if( P3_2 == 0 ) { row = 2; goto SEG1;}
+ 169            if( P3_3 == 0 ) { row = 3; goto SEG1;}
+ 170            return;
+ 171            SEG1:
+ 172            
+ 173            P3 = ( P3 & 0xC0) | 0x30;
+ 174            P4 = ( P4 & 0xEB) | 0x14;
+ 175            if( P3_4 == 0 ) { column = 3; goto SEG2;}
+ 176            if( P3_5 == 0 ) { column = 2; goto SEG2;}
+ 177            if( P4_2 == 0 ) { column = 1; goto SEG2;}
+C51 COMPILER V9.54   _NOP_PRESS_                                                           06/20/2025 18:09:57 PAGE 4   
+
+ 178            if( P4_4 == 0 ) { column = 0; goto SEG2;}
+ 179            return;
+ 180            SEG2:
+ 181            {EnableWrite = 1; return;}
+ 182            
+ 183          }
+ 184          
+ 185          
+ 186          /**
+ 187            * 这里是按键识别和循环链表操作的耦合模块
+ 188            * 就是为了实现按什么键实现什么样的功能
+ 189            * 模拟电话按键及功能：
+ 190            * |-----------|
+ 191            * | 0000 0000 |
+ 192            * |-----------|
+ 193            * | 1   2   3 |
+ 194            * | 4   5   6 |
+ 195            * | 7   8   9 |
+ 196            * | *   0   # |
+ 197            * |-----------|
+ 198            *
+ 199            * 按下* 其中_是熄灭
+ 200            * |-----------|
+ 201            * | ____ ___0 |
+ 202            * |-----------|
+ 203            * | 1   2   3 |
+ 204            * | 4   5   6 |
+ 205            * | 7   8   9 |
+ 206            * | *   0   # |
+ 207            * |-----------|
+ 208            *
+ 209            * 按下#         
+ 210            * |-----------|
+ 211            * | ____ ____ |
+ 212            * |-----------|
+ 213            * | 1   2   3 |
+ 214            * | 4   5   6 |
+ 215            * | 7   8   9 |
+ 216            * | *   0   # |
+ 217            * |-----------|
+ 218            **/
+ 219          
+ 220          
+ 221          Ring *write_key(Ring *head)
+ 222          {
+ 223            Ring *p = head;
+ 224            int j = 0;
+ 225            if(EnableWrite == 0) { return head; }
+ 226            
+ 227            if(row==3 && (column==0 || column==2))
+ 228            {
+ 229              for(j=1; j<=7; j++)
+ 230              {
+ 231                p->Data = 0xFF;
+ 232                p = p->Next;
+ 233              }
+ 234              if(column == 0) {p->Data = 0xC0; return head;}
+ 235              else {p->Data = 0xFF; return head;}
+ 236            }
+ 237            
+ 238            if(row<=3 && column<=3)
+ 239            {
+C51 COMPILER V9.54   _NOP_PRESS_                                                           06/20/2025 18:09:57 PAGE 5   
+
+ 240              head = write(head, keyboard[row][column]);
+ 241              EnableWrite = 0;
+ 242            }
+ 243            return head;
+ 244          }
+ 245          
+ 246          
+ 247          #include "CT107D_lib.h"
+ 248          
+ 249          void main()
+ 250          {
+ 251          
+ 252            Ring *head = 0x00;
+ 253            head = Ring_init();
+ 254            
+ 255            while(1)
+ 256            {
+ 257              get_key();
+ 258              head = write_key(head);
+ 259              display(head);
+ 260            }
+ 261          }
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  1 ERROR(S)

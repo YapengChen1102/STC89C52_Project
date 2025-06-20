@@ -1,0 +1,158 @@
+C51 COMPILER V9.54   MAIN                                                                  06/20/2025 18:32:03 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main
+                    -.lst) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          /**
+   2            * 八位数码管显示--无消影程序
+   3            * 实验现象： 数字重叠，同时显示两位或多位相同的数字
+   4            * 原因: 现实系统是有延时的 + 数码管动态扫描 不加消影是必然的。
+   5            */
+   6            
+   7          #include <REGX52.H>
+   8          
+   9          /**
+  10            * 设置显示时间
+  11            */
+  12          unsigned int Hour=00, Min=00, Sec=00;
+  13          
+  14          
+  15          
+  16          unsigned int refresh = 0; 
+  17          // digit display ( 0~9 )
+  18          unsigned char digit[] = {0xC0, 0xF9, 0xA4, 0xB0, 0x99,
+  19                                   0x92, 0x82, 0xF8, 0x80, 0x90}; 
+  20          
+  21          // 八位数码管选通
+  22          unsigned char tube_label[] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
+  23                                   
+  24          void delay(unsigned int time)
+  25          {
+  26   1        unsigned i,j;
+  27   1        for(i=0; i<time; i++)
+  28   1        {
+  29   2          for(j=0; j<=120; j++);
+  30   2        }
+  31   1      }
+  32          
+  33          void Bit_Latch()
+  34          {
+  35   1        P2 = (P2 & 0x1F)|0xC0;
+  36   1        P2 &= 0x1F;
+  37   1      }
+  38          
+  39          
+  40          void Seg_Latch()
+  41          {
+  42   1        P2 = (P2 & 0x1F)|0xE0;    
+  43   1        P2 &= 0x1F;               
+  44   1      }
+  45          
+  46          int Power(int X, int Y)
+  47          {
+  48   1        int i, result=1;
+  49   1        for(i=0; i<Y; i++)
+  50   1        {
+  51   2          result *= X;
+  52   2        }
+  53   1        return result;
+  54   1      }
+C51 COMPILER V9.54   MAIN                                                                  06/20/2025 18:32:03 PAGE 2   
+
+  55          
+  56          
+  57          void ShowNum(unsigned int column, unsigned int number, unsigned int length)
+  58          {
+  59   1        unsigned int i, loc = column-1;
+  60   1        for(i=length; i>0; i--)
+  61   1        {
+  62   2          P0 = tube_label[loc];
+  63   2          Bit_Latch();
+  64   2          P0 = digit[(number/Power(10, i-1))%10];
+  65   2          Seg_Latch();
+  66   2          loc++;
+  67   2          delay(refresh);
+  68   2        }
+  69   1      }
+  70          
+  71          void ShowChar(unsigned int column, unsigned char Char)
+  72          {
+  73   1        if(Char=='-')
+  74   1        {
+  75   2          P0 = tube_label[column-1];
+  76   2          Bit_Latch();
+  77   2          P0 = 0xBF;
+  78   2          Seg_Latch();
+  79   2          delay(refresh);
+  80   2        }
+  81   1      }
+  82          
+  83          void Timer0_Init()
+  84          {
+  85   1      
+  86   1        TMOD &= 0xF0;     //Set timer work mode
+  87   1        TMOD |= 0x01;     //Set timer work mode
+  88   1        TL0 = 0x18;       //Initial timer value
+  89   1        TH0 = 0xFC;       //Initial timer value
+  90   1        TF0 = 0;        //Clear TF0 flag
+  91   1        TR0 = 1;        //Timer0 start run
+  92   1        ET0 = 1;
+  93   1        EA  = 1;
+  94   1      }
+  95          
+  96          
+  97          void main()
+  98          { 
+  99   1        P0 = 0xFF;
+ 100   1        P2 = (P2 & 0x1F) | 0x80;
+ 101   1        P2 &= 0x1F;
+ 102   1        
+ 103   1        Timer0_Init();
+ 104   1        while(1)
+ 105   1        {
+ 106   2          ShowNum(1, Hour, 2);
+ 107   2          ShowChar(3, '-');
+ 108   2          ShowNum(4, Min, 2);
+ 109   2          ShowChar(6, '-');
+ 110   2          ShowNum(7, Sec, 2);
+ 111   2        }
+ 112   1      }
+ 113          
+ 114          
+ 115          void Timer0_Routine() interrupt 1
+ 116          {
+C51 COMPILER V9.54   MAIN                                                                  06/20/2025 18:32:03 PAGE 3   
+
+ 117   1        static unsigned int count;
+ 118   1        TL0 = 0x18;
+ 119   1        TH0 = 0xFC;
+ 120   1        if(count >= 1000)
+ 121   1        {
+ 122   2          count = 0;
+ 123   2          Sec++;
+ 124   2          if(Sec==60){ Min++; Sec = 0; }
+ 125   2          if(Min==60){ Hour++; Min = 0; }
+ 126   2          if(Hour==24){ Hour = 0; }
+ 127   2        }
+ 128   1        
+ 129   1        count++;
+ 130   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    440    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     28      10
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

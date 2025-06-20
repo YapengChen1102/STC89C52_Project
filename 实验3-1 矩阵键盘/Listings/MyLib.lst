@@ -1,0 +1,183 @@
+C51 COMPILER V9.54   MYLIB                                                                 06/19/2025 19:15:00 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MYLIB
+OBJECT MODULE PLACED IN .\Objects\MyLib.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE MyLib.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\MyL
+                    -ib.lst) TABS(2) OBJECT(.\Objects\MyLib.obj)
+
+line level    source
+
+   1          sfr    P0 = 0x80;
+   2          sfr    P2 = 0xA0;
+   3          sfr    P3 = 0xB0;
+   4          sfr    P4 = 0xC0;
+   5          
+   6          sbit P3_0 = 0xB0;
+   7          sbit P3_1 = 0xB1;
+   8          sbit P3_2 = 0xB2;
+   9          sbit P3_3 = 0xB3;
+  10          sbit P3_4 = 0xB4;
+  11          sbit P3_5 = 0xB5;
+  12          sbit P3_6 = 0xB6;
+  13          sbit P3_7 = 0xB7;
+  14          
+  15          sbit P4_2 = 0xC2;
+  16          sbit P4_4 = 0xC4;
+  17          
+  18          unsigned int EnableWrite = 0;
+  19          unsigned int row = 114;
+  20          unsigned int column = 514;
+  21          unsigned int keyboard[4][4] = {
+  22                        0xF9, 0xA4, 0xB0, 0xFF,
+  23                        0x99, 0x92, 0x82, 0xFF,
+  24                        0xF8, 0x80, 0x90, 0xFF,
+  25                        0xC0, 0xC0, 0xFF, 0xFF
+  26                                        };
+  27          
+  28          int tube_label[] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
+  29          
+  30          #define NULL 0x00;
+  31          
+  32          typedef struct ring
+  33          {
+  34            unsigned int Data;
+  35            struct ring *Next;
+  36          }RING;
+  37          
+  38          RING Node1;
+  39          RING Node2;
+  40          RING Node3;
+  41          RING Node4;
+  42          RING Node5;
+  43          RING Node6;
+  44          RING Node7;
+  45          RING Node8;
+  46          
+  47          RING *ring_init(void)
+  48          {
+  49   1        RING *head;
+  50   1        Node1.Data = 0xFF;
+  51   1        Node2.Data = 0xFF;
+  52   1        Node3.Data = 0xFF;
+  53   1        Node4.Data = 0xFF;
+  54   1        Node5.Data = 0xFF;
+C51 COMPILER V9.54   MYLIB                                                                 06/19/2025 19:15:00 PAGE 2   
+
+  55   1        Node6.Data = 0xFF;
+  56   1        Node7.Data = 0xFF;
+  57   1        Node8.Data = 0xFF;
+  58   1        
+  59   1        Node1.Next = &Node2;
+  60   1        Node2.Next = &Node3;
+  61   1        Node3.Next = &Node4;
+  62   1        Node4.Next = &Node5;
+  63   1        Node5.Next = &Node6;
+  64   1        Node6.Next = &Node7;
+  65   1        Node7.Next = &Node8;
+  66   1        Node8.Next = &Node1;
+  67   1        
+  68   1        head = &Node1;
+  69   1        return head;
+  70   1      }
+  71          
+  72          void delay(unsigned int ms)
+  73          {
+  74   1        unsigned i,j;
+  75   1        for(i=0; i<ms; i++)
+  76   1        {
+  77   2          for(j=0; j<120; j++);
+  78   2        }
+  79   1      }
+  80          
+  81          RING *write(RING *head, unsigned int written_Data)
+  82          {
+  83   1        RING *pr = head;
+  84   1        pr->Data = written_Data;
+  85   1        return pr->Next;
+  86   1      }
+  87          
+  88          void display(RING *head)
+  89          {
+  90   1        int loc;
+  91   1        RING *pr = head;
+  92   1          for(loc=0; loc<=7; loc++)
+  93   1          {
+  94   2            P0 = tube_label[loc];
+  95   2            P2 = (P2 & 0x1F) | 0xC0;
+  96   2            P2 &= 0x1F;
+  97   2            
+  98   2            P0 = pr->Data;
+  99   2            P2 = (P2 & 0x1F) | 0xE0;
+ 100   2            P2 &= 0x1F;
+ 101   2            pr = pr->Next;
+ 102   2            delay(5);
+ 103   2          }
+ 104   1      }
+ 105          
+ 106          
+ 107          void get_key(void)
+ 108          {
+ 109   1        P3 = 0x0F;
+ 110   1      //  P3 = (P3 & 0xC0) | 0x0F;
+ 111   1      //  P4 = (P4 & 0xEB) | 0x00;
+ 112   1        delay(10);
+ 113   1        if( P3_0 == 0 ) { row = 0; goto SEG1;}
+ 114   1        if( P3_1 == 0 ) { row = 1; goto SEG1;}
+ 115   1        if( P3_2 == 0 ) { row = 2; goto SEG1;}
+ 116   1        if( P3_3 == 0 ) { row = 3; goto SEG1;}
+C51 COMPILER V9.54   MYLIB                                                                 06/19/2025 19:15:00 PAGE 3   
+
+ 117   1        return;
+ 118   1        SEG1:
+ 119   1        P3 = 0xF0;
+ 120   1      //  P3 = ( P3 & 0xC0) | 0x30;
+ 121   1      //  P4 = ( P4 & 0xEB) | 0x14;
+ 122   1        if( P3_4 == 0 ) { column = 3; goto SEG2;}
+ 123   1        if( P3_5 == 0 ) { column = 2; goto SEG2;}
+ 124   1        if( P3_6 == 0 ) { column = 1; goto SEG2;}
+ 125   1        if( P3_7 == 0 ) { column = 0; goto SEG2;}
+ 126   1        return;
+ 127   1        SEG2:
+ 128   1        {EnableWrite = 1; return;}
+ 129   1        
+ 130   1      }
+ 131          
+ 132          RING *write_key(RING *head)
+ 133          {
+ 134   1        RING *p = head;
+ 135   1        int j = 0;
+ 136   1        if(EnableWrite == 0) { return head; }
+ 137   1        
+ 138   1        if(row==3 && (column==0 || column==2))
+ 139   1        {
+ 140   2          for(j=1; j<=7; j++)
+ 141   2          {
+ 142   3            p->Data = 0xFF;
+ 143   3            p = p->Next;
+ 144   3          }
+ 145   2          if(column == 0) {p->Data = 0xC0; return head;}
+ 146   2          else {p->Data = 0xFF; return head;}
+ 147   2        }
+ 148   1        
+ 149   1        if(row<=3 && column<=3)
+ 150   1        {
+ 151   2          head = write(head, keyboard[row][column]);
+ 152   2          EnableWrite = 0;
+ 153   2        }
+ 154   1        return head;
+ 155   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    552    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     94      11
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

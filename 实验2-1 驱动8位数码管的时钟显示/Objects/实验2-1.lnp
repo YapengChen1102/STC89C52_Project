@@ -1,0 +1,4 @@
+".\Objects\main.obj",
+".\Objects\Nixie_Disp.obj" 
+TO ".\Objects\实验2-1" 
+PRINT(".\Listings\实验2-1.m51") RAMSIZE(256) 
