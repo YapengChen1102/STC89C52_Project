@@ -113,8 +113,11 @@ input does not affect the state of the latches.
 
 如果此时$Q0$接了一颗LED灯,那LED灯将会被点亮。
 
-```text
-VCC --> LED --> 限流电阻 --> Q0
+```mermaid
+graph LR
+A[VCC] --> B[LED]
+B --> C[限流电阻]
+C --> D[Q0]
 ```
 
 ${\color{red} 至此，我们便完成了点亮一颗LED灯的任务。}$
